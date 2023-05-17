@@ -6,79 +6,58 @@ using System.Threading.Tasks;
 
 namespace ConsoleMenuFramework
 {
-    internal class Menu
+    public class ChoiceMenu : IConsoleMenu
     {
-        string[] _options;
-        string _menu;
-        static Stack<Menu> stack = new Stack<Menu>();
-        public Menu(ref string[] options)
-        {
-            _options = options;
-            FunctionMenu();
-        }
-        public Menu(string commonOptionName, int lengthOfNumberedOptions)
-        {
-            AddNumberedOptions(commonOptionName, lengthOfNumberedOptions);
-            FunctionMenu();
-        }
-        public int GetOption()
-        {
-            AddMenuToStack();
-            int function;
-            do
-            {
-                Console.Write(_menu);
-            }
-            while (!IsValidFunction(out function));
-            CheckExit(ref function);
-            return function;
-        }// Return an int to be used for switch case
-        private bool IsValidFunction(out int function)
-        {
-            function = (int)InputManager.GetFloatInput("Function");
-            if (function > _options.Length || function < 0)
-            {
-                ErrorHandler.InvalidInputErrorMessage();
-                return false;
-            }
-            return true;
-        }
-        private void FunctionMenu()
-        {       // Create a menu using options provided
-            for (int i = 0; i < _options.Length; i++)
-            {
-                _menu += $"||{i}:\t{_options[i]}\t||\n";
-            }
-            _menu += $"||{_options.Length}:\tQuit\t||\n";
+        Dictionary<string, Action> _optionMenu = new Dictionary<string, Action>();
+        string _consolePrompt;
+        string _header = "=";
+        string _footer = "=";
+        string _lineSeperator = "";
+        string _column = "||";
+        public ConsoleColor TextColor { get; set; }
+        public ConsoleColor BackgroundColor { get; set; }
+        public Dictionary<string, Action> OptionMenu { get => _optionMenu; }
+        public string Column { get => _column; set => _column = value; }
+        public string LineSeperator { get => _lineSeperator; set => _lineSeperator = value; }
+        public string Footer { get => _footer; set => _footer = value; }
+        public string Header { get => _header; set => _header = value; }
+        public string ConsolePrompt { get => _consolePrompt; set => _consolePrompt = value; }
 
-        }
-        private void AddMenuToStack()
+        public ChoiceMenu(ConsoleColor textColor, ConsoleColor backgroundColor)
         {
-            if (!Program.MenuList.Contains(this))
-                Program.AddMenuToStack(this);
+            TextColor = textColor;
+            BackgroundColor = backgroundColor;
         }
-        public void GoBackToPreviousMenu()
+        public void AddMenuToStack()
         {
-            Menu previousMenu = Program.GetMenuFromStack();
-            if (previousMenu == null)
-            {
-                Program.Exit();
-            }
+            MenuManager.AddMenuToStack(this);
         }
-        public void AddNumberedOptions(string nameOfCommonOption, int length)
+        public IConsoleMenu GetPreviousMenu()
         {
-            _options = new string[length];
-            for (int i = 0; i < length; i++)
-            {
-                _options[i] = nameOfCommonOption + i;
-            }
+            return MenuManager.GetMenuFromStack();
         }
-        private void CheckExit(ref int function)
+        public void PrintMenu()
         {
-            if (function == _options.Length)
-            {
-                Program.GetMenuFromStack();
-            }
+            ChangeToConsoleColor();
+            //Console.Write(new string(Header, 2, ));
+            Console.WriteLine(LineSeperator);
+            Console.Write(Column + ConsolePrompt + Column);
+            Console.WriteLine(LineSeperator);
+            Console.Write(Header);
+            Console.WriteLine("");
+        }
+        private void ChangeToConsoleColor()
+        {
+            Console.BackgroundColor = BackgroundColor;
+            Console.ForegroundColor = TextColor;
+        }
+        public void AddFunctionChoice(string functionName, Action function)
+        {
+            _optionMenu.Add(functionName, function);
+        }
+        public void RemoveFunctionChoice(string functionName)
+        {
+            _optionMenu.Remove(functionName);
         }
     }
 }
